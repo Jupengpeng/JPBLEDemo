@@ -434,7 +434,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.yintao.wybz;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "76a8ee3e-d320-4aeb-9889-c92a535632e5";
-				PROVISIONING_PROFILE_SPECIFIER = YCDevelopment20161014;
+				PROVISIONING_PROFILE_SPECIFIER = YCDevelopment;
 			};
 			name = Debug;
 		};
@@ -449,7 +449,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.yintao.wybz;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "1cff2917-ed9c-47dc-b9b0-0374c2d19681";
+				PROVISIONING_PROFILE = "d7638656-a7c9-49ef-80a4-c9186208b826";
+				PROVISIONING_PROFILE_SPECIFIER = YCDevelopment;
 			};
 			name = Release;
 		};

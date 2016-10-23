@@ -104,16 +104,7 @@ static NSString *const ServiceUUID1 =  @"FFE0";
     _peripheral = peripheral;
     [_manager connectPeripheral:_peripheral options:nil];
     
-    
-    [self presentViewController:self.inputController animated:YES completion:^{
-        
-    }];
-    self.inputController.imputValueBlock = ^(NSString *sendStr){
-        _sendString = sendStr;
-        NSString *str = _sendString;
-        NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
-        [self writeCharacteristic:peripheral characteristic:_characteristic value:data];
-    };
+
 }
 
 #pragma mark - <CBCentralManagerDelegate,CBPeripheralDelegate>
@@ -200,6 +191,25 @@ static NSString *const ServiceUUID1 =  @"FFE0";
     [peripheral setDelegate:self];
     self.title = peripheral.name ;
     [_manager stopScan];
+    
+    
+    
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"已经连接上 %@",peripheral.name] message:nil preferredStyle:UIAlertControllerStyleAlert];
+    
+    [self presentViewController:alertController animated:YES completion:^{
+        [alertController dismissViewControllerAnimated:NO completion:^{
+            //连接上跳转
+            [self presentViewController:self.inputController animated:YES completion:nil];
+            self.inputController.imputValueBlock = ^(NSString *sendStr){
+                _sendString = sendStr;
+                NSString *str = _sendString;
+                NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
+                [self writeCharacteristic:peripheral characteristic:_characteristic value:data];
+            };
+        }];
+
+    }];
+
 }
 
 //扫描到Services
