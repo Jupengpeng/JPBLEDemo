@@ -26,7 +26,6 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
     //设备服务特性
     CBCharacteristic *_characteristic;
     
-    
     /**
      *  需要初始化
      */
@@ -36,7 +35,6 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
 }
 
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
-
 @property (nonatomic,strong) InputValueController *inputController;
 
 @end
@@ -55,7 +53,6 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
     //初始化蓝牙管理对象
     _manager = [[CBCentralManager alloc]initWithDelegate:self queue:dispatch_get_main_queue()];
 
-    
     UIButton *leftButton = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 60, 20)];
     [leftButton setTitle:@"开始扫描" forState:UIControlStateNormal];
     leftButton.titleLabel.font = [UIFont systemFontOfSize:14.0f];
@@ -82,7 +79,6 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
     return _discoverPeripherals.count;
-
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
@@ -94,8 +90,6 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
     }
     CBPeripheral *peripheral = _discoverPeripherals [indexPath.row];
     cell.textLabel.text = [NSString stringWithFormat:@"设备名称 ：%@",peripheral.name];
-    
-    
     return cell;
 }
 
@@ -104,8 +98,6 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
     CBPeripheral *peripheral = _discoverPeripherals [indexPath.row];
     _peripheral = peripheral;
     [_manager connectPeripheral:_peripheral options:nil];
-    
-
 }
 
 #pragma mark - <CBCentralManagerDelegate,CBPeripheralDelegate>
@@ -130,10 +122,7 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
             break;
         case CBCentralManagerStatePoweredOn:
             NSLog(@">>>CBCentralManagerStatePoweredOn");
-
-            /*
-             第一个参数nil就是扫描周围所有的外设，扫描到外设后会进入
-             */
+            //第一个参数nil就是扫描周围所有的外设，扫描到外设后会进入
             break;
         default:
             break;
@@ -216,8 +205,7 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
 //扫描到Services
 -(void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error{
     //  NSLog(@">>>扫描到服务：%@",peripheral.services);
-    if (error)
-    {
+    if (error){
         NSLog(@">>>Discovered services for %@ with error: %@", peripheral.name, [error localizedDescription]);
         return;
     }
@@ -239,20 +227,7 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
         NSLog(@"error Discovered characteristics for %@ with error: %@", service.UUID, [error localizedDescription]);
         return;
     }
-    
-//    for (CBCharacteristic *characteristic in service.characteristics)
-//    {
-//        NSLog(@"service:%@ 的 Characteristic: %@",service.UUID,characteristic.UUID);
-//    }
-    
-    //获取Characteristic的值，读到数据会进入方法：-(void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
 
-//    for (CBCharacteristic *characteristic in service.characteristics){
-//        [peripheral readValueForCharacteristic:characteristic];
-//        [self notifyCharacteristic:peripheral characteristic:characteristic];
-//
-//    }
-    
     for (CBCharacteristic *characteristic in service.characteristics){
         //19B10011-E8F2-537E-4F6C-D104768A1214   read write
        //19B10012-E8F2-537E-4F6C-D104768A1214      notify
@@ -274,39 +249,22 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
 
 //获取的charateristic的值
 -(void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error{
-    
 
-//    if (characteristic.value) {
-//        NSString *value = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
-//        NSLog(@"读取到特征值：%@",value);
-//    }else{
-//        NSLog(@"未发现特征值.");
-//    }
-
-    
     NSString *result = [[NSString alloc] initWithData:characteristic.value  encoding:NSASCIIStringEncoding];
-    NSLog(@"result+characteristic uuid:%@  value:%@",[NSString stringWithFormat:@"%@",characteristic.UUID],result);
+    NSLog(@"result    characteristic uuid:%@  value:%@",[NSString stringWithFormat:@"%@",characteristic.UUID],result);
     if ([_lastString isEqualToString:result]) {
         return;
     }
-//    NSString *str = @"Surprise";
-//    NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
-//    [self writeCharacteristic:peripheral characteristic:characteristic value:data];
     _characteristic = characteristic;
-
- 
-    
 }
 
 
 //搜索到Characteristic的Descriptors
 -(void)peripheral:(CBPeripheral *)peripheral didDiscoverDescriptorsForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error{
-    
     //打印出Characteristic和他的Descriptors
     for (CBDescriptor *descriptor in characteristic.descriptors) {
         
     }
-    
 }
 //获取到Descriptors的值
 -(void)peripheral:(CBPeripheral *)peripheral didUpdateValueForDescriptor:(CBDescriptor *)descriptor error:(NSError *)error{
