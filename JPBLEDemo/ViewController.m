@@ -12,26 +12,27 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 #import "InputValueController.h"
 static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
-
+//19B10011-E8F2-537E-4F6C-D104768A1214   readwrite
+//19B10012-E8F2-537E-4F6C-D104768A1214      notify
 
 @interface ViewController ()<CBCentralManagerDelegate,CBPeripheralDelegate,UITableViewDelegate,UITableViewDataSource>
 {
     //系统蓝牙设备管理对象
     CBCentralManager *_manager;
-    
     //用于保存被发现设备
     NSMutableArray *_discoverPeripherals;
     //连接上的外部设备
     CBPeripheral *_peripheral ;
     //设备服务特性
     CBCharacteristic *_characteristic;
-    
+    //更新的服务特性
+    CBCharacteristic *_characteristicNotifying;
     /**
      *  需要初始化
      */
     BOOL _SurpriseSended;
-    NSString *_sendString;
-    NSString *_lastString;
+//    NSString *_sendString;
+    //NSString *_lastString;
 }
 
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
@@ -40,6 +41,13 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
 @end
 
 @implementation ViewController
+- (IBAction)sendMsg:(id)sender {
+        NSString *str = @"ee";
+        NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
+    [self writeCharacteristic:_peripheral characteristic:_characteristic value:data];
+    
+}
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -60,6 +68,7 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
     [leftButton addTarget:self action:@selector(startScan) forControlEvents:UIControlEventTouchUpInside];
     
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:leftButton];
+
 }
 
 - (void)startScan{
@@ -123,6 +132,7 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
         case CBCentralManagerStatePoweredOn:
             NSLog(@">>>CBCentralManagerStatePoweredOn");
             //第一个参数nil就是扫描周围所有的外设，扫描到外设后会进入
+            [self startScan];
             break;
         default:
             break;
@@ -147,15 +157,20 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
             isExisted = YES;
         }
     }
-    
+   
     
     if (!isExisted) {
         [_discoverPeripherals addObject:peripheral];
         NSLog(@"%@",_discoverPeripherals);
     }
     [self.tableView reloadData];
-
+    
+    
+    if ([peripheral.name isEqualToString:@"LeedianTech_TEST"]) {
+        [_manager connectPeripheral:peripheral options:nil];
+         NSLog(@"-----------peripheral.name-----------%@", peripheral.name);
     }
+}
 
 //连接到Peripherals-失败
 -(void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
@@ -174,31 +189,27 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
 //连接到Peripherals-成功
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral
 {
-    _peripheral = peripheral;
-    //外设寻找 services
-    [peripheral discoverServices:nil];
-    
-    [peripheral setDelegate:self];
+    _peripheral = peripheral; //设置全局的连接对象
+    [peripheral discoverServices:nil]; //外设寻找 services
+    [peripheral setDelegate:self];     //设置外设的代理
     self.title = peripheral.name ;
-    [_manager stopScan];
+    [_manager stopScan]; //停止扫描
     
-    
-    
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"已经连接上 %@",peripheral.name] message:nil preferredStyle:UIAlertControllerStyleAlert];
-    
-    [self presentViewController:alertController animated:YES completion:^{
-        [alertController dismissViewControllerAnimated:NO completion:^{
-            //连接上跳转
-            [self presentViewController:self.inputController animated:YES completion:nil];
-            self.inputController.imputValueBlock = ^(NSString *sendStr){
-                _sendString = sendStr;
-                NSString *str = _sendString;
-                NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
-                [self writeCharacteristic:peripheral characteristic:_characteristic value:data];
-            };
-        }];
+//    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"已经连接上 %@",peripheral.name] message:nil preferredStyle:UIAlertControllerStyleAlert];
 
-    }];
+//    [self presentViewController:alertController animated:YES completion:^{
+//        [alertController dismissViewControllerAnimated:NO completion:^{
+//            //连接上跳转
+//            [self presentViewController:self.inputController animated:YES completion:nil];
+//            self.inputController.imputValueBlock = ^(NSString *sendStr){
+//                //_sendString = sendStr;
+//                NSString *str = sendStr;
+//                NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
+//                [self writeCharacteristic:peripheral characteristic:_characteristic value:data];
+//            };
+//        }];
+//
+//    }];
 
 }
 
@@ -210,11 +221,9 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
         return;
     }
     for (CBService *service in peripheral.services) {
-        //serviceId筛选
-        NSLog(@"----------");
-        NSLog( service.UUID.UUIDString);
-        if ([service.UUID.UUIDString isEqualToString:ServiceUUID1]) {
-            [peripheral discoverCharacteristics:nil forService:service];
+        NSLog(@"----------service UUID----------  %@", service.UUID.UUIDString);
+        if ([service.UUID.UUIDString isEqualToString:ServiceUUID1]) {    //serviceId筛选
+            [peripheral discoverCharacteristics:nil forService:service];//查找服务的特性
 
         }
     }
@@ -229,19 +238,14 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
     }
 
     for (CBCharacteristic *characteristic in service.characteristics){
-        //19B10011-E8F2-537E-4F6C-D104768A1214   read write
-       //19B10012-E8F2-537E-4F6C-D104768A1214      notify
         if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:@"19B10011-E8F2-537E-4F6C-D104768A1214"]]){
-            NSLog(@"找到可读特征readPowerCharacteristic : %@",characteristic);
+            NSLog(@"--------readwrite-------- : %@",characteristic);
             [peripheral readValueForCharacteristic:characteristic];
-            //[peripheral setNotifyValue:YES forCharacteristic:characteristic];
             [self notifyCharacteristic:peripheral characteristic:characteristic];
-    
         }else if([characteristic.UUID isEqual:[CBUUID UUIDWithString:@"19B10012-E8F2-537E-4F6C-D104768A1214"]]){
+           // [peripheral readValueForCharacteristic:characteristic];
             [self notifyCharacteristic:peripheral characteristic:characteristic];
-            //[peripheral setNotifyValue:YES forCharacteristic:characteristic];
-            //[peripheral readValueForCharacteristic:characteristic];
-            NSLog(@" setNotifyValue : %@",characteristic);
+            NSLog(@"--------Notify------ : %@",characteristic);
         }
     }
 
@@ -250,12 +254,17 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
 //获取的charateristic的值
 -(void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error{
 
-    NSString *result = [[NSString alloc] initWithData:characteristic.value  encoding:NSASCIIStringEncoding];
-    NSLog(@"result    characteristic uuid:%@  value:%@",[NSString stringWithFormat:@"%@",characteristic.UUID],result);
-    if ([_lastString isEqualToString:result]) {
-        return;
+    if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:@"19B10011-E8F2-537E-4F6C-D104768A1214"]]){
+        _characteristic = characteristic;
+         // NSLog(@"--------_characteristic------ : %@",characteristic);
+    }else if([characteristic.UUID isEqual:[CBUUID UUIDWithString:@"19B10012-E8F2-537E-4F6C-D104768A1214"]]){
+        _characteristicNotifying=characteristic;
+         // NSLog(@"--------_characteristicNotifying------ : %@",characteristic);
     }
-    _characteristic = characteristic;
+
+    NSString *result = [[NSString alloc] initWithData:characteristic.value  encoding:NSASCIIStringEncoding];
+    NSLog(@"--------result------    characteristic uuid:%@  value:%@",[NSString stringWithFormat:@"%@",characteristic.UUID],result);
+
 }
 
 
@@ -280,13 +289,10 @@ static NSString *const ServiceUUID1 =  @"19B10010-E8F2-537E-4F6C-D104768A1214";
                      value:(NSData *)value{
     
     NSLog(@"%lu", (unsigned long)characteristic.properties);
-    
-    
+    NSLog(@"-----characteristic.UUID---%@",characteristic.UUID);
     //只有 characteristic.properties 有write的权限才可以写
     if(characteristic.properties & CBCharacteristicPropertyWrite){
-        /*
-         最好一个type参数可以为CBCharacteristicWriteWithResponse或type:CBCharacteristicWriteWithResponse,区别是是否会有反馈
-         */
+        // 最好一个type参数可以为CBCharacteristicWriteWithResponse或type:CBCharacteristicWriteWithResponse,区别是是否会有反馈
         [peripheral writeValue:value forCharacteristic:characteristic type:CBCharacteristicWriteWithResponse];
     }else{
         NSLog(@"该字段不可写！");
@@ -302,11 +308,11 @@ didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
         return;
     }
     
-    NSLog(@"写入%@成功",characteristic);
-    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"写入成功" message:[NSString stringWithFormat:@"写入%@成功",characteristic] delegate:self cancelButtonTitle:@"好的" otherButtonTitles: nil];
-    [alertView show];
+    NSLog(@"-----写入成功--------%@",characteristic);
+//    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"写入成功" message:[NSString stringWithFormat:@"写入%@成功",characteristic] delegate:self cancelButtonTitle:@"好的" otherButtonTitles: nil];
+//    [alertView show];
 
-    _lastString = [[NSString alloc] initWithData:characteristic.value  encoding:NSASCIIStringEncoding];
+   // _lastString = [[NSString alloc] initWithData:characteristic.value  encoding:NSASCIIStringEncoding];
 }
 
 //设置通知
